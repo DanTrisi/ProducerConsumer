@@ -30,10 +30,7 @@ int main(){
         { //producer                                        
             while(1){
                 nexti=(i+1)%dim;
-                //leggo j aggiornata dal consumer
-                #pragma omp atomic read
-                localj=j;
-                if(nexti==localj){
+                if(nexti==j){
                     continue;
                 }
                 c=myin.get(); 
@@ -45,8 +42,6 @@ int main(){
                 buffer[i]=c;
                 //flush della variabile buffer
                 #pragma omp flush (buffer)
-                //scrivo l'aggiornamento di i
-                #pragma omp atomic write
                 i=nexti;
             }
         }
@@ -54,21 +49,16 @@ int main(){
         #pragma omp section
         { 
             while(1){
-                do{
-                    //leggo i aggiornato da producer
-                    #pragma omp atomic read
-                    locali=i; 
+                do{ 
                     //leggo termina aggiornato da producer
                     #pragma omp atomic read
                     localtermina=termina;
-                    if(termina==1&&locali==j) 
+                    if(termina==1&&i==j) 
                         break;
-                }while(locali==j);
-                if(localtermina && locali == j)
+                }while(i==j);
+                if(localtermina && i == j)
                     break;
                 printf("Thread %d read %c\n",omp_get_thread_num(),buffer[j]);
-                //scrivo l'aggiornamento di j
-                #pragma omp atomic write
                 j=(j+1)%dim; 
             }
         }
